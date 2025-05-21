@@ -18,7 +18,7 @@ The repository currently provides a lightweight setup with a few core tools and 
 - **`SLDEA Data/`** – Excel files with dialogue annotations.
 - **`preprocessing.py`** – converts the Excel files to CSV format.
 - **`Annotation_tool.html` / `script.js`** – a small web app for manual annotation.
-- **`libs/xlsx.full.min.js`** – local copy of the SheetJS library required by the annotation tool.
+- **SheetJS library** – automatically loaded from a CDN for the annotation tool.
 - **`dialogue_pred.ipynb`** – example notebook for training a model.
 - **`ESL_AddedExperinments.ipynb`** – additional experiments.
 - **`2024ACLESLMainCodes_Results/`** – CSV files with example results.
@@ -43,15 +43,13 @@ pip install -r requirements.txt
 
 2. **Annotate**
    Open `Annotation_tool.html` in your browser. You can load CSV files and apply labels using the interface.
-   The page relies on the SheetJS library provided in `libs/xlsx.full.min.js` to
-   read Excel files. If the library is missing, download it from
-   `https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js` and place it in the
-   `libs/` folder.
+   The page loads the SheetJS library directly from
+   `https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js`.
 
-3. **Train a model**
+4. **Train a model**
    Use `dialogue_pred.ipynb` (or `ESL_AddedExperinments.ipynb`) in Jupyter Notebook. Load the CSV files created in step 1 and follow the cells to train a simple model.
 
-4. **Evaluate**
+5. **Evaluate**
    After training, you can run evaluation steps in the notebook or compare results with the CSVs inside `2024ACLESLMainCodes_Results`.
 
 This simplified workflow should help you get started even if you are new to Python. The larger directory structure mentioned in earlier READMEs (e.g. `dataset/SLDEA`, `notebooks/`, `figures/`, `utils/`, `reports/`) is not present in this repository.
