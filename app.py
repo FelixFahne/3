@@ -7,6 +7,12 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+
+def canonicalize_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Strip whitespace and lower-case column names for consistent access."""
+    df.rename(columns=lambda c: c.strip().lower(), inplace=True)
+    return df
+
 def preprocess_excel(file):
     """Convert an uploaded Excel or CSV file to CSV and return the path."""
     if file is None:
@@ -21,6 +27,7 @@ def preprocess_excel(file):
     except Exception as e:
         raise gr.Error(f"Failed to read file: {e}")
 
+    canonicalize_columns(df)
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
     df.to_csv(tmp.name, index=False)
     return tmp.name
@@ -36,6 +43,8 @@ def train_model(csv_file):
         df = pd.read_excel(csv_file.name, engine="openpyxl")
     else:
         df = pd.read_csv(csv_file.name, encoding="utf-8-sig")
+
+    canonicalize_columns(df)
 
     if "label" not in df.columns:
         raise gr.Error("CSV must contain a column named 'label'")
@@ -63,6 +72,8 @@ def evaluate_model(model_file, csv_file):
         df = pd.read_excel(csv_file.name, engine="openpyxl")
     else:
         df = pd.read_csv(csv_file.name, encoding="utf-8-sig")
+
+    canonicalize_columns(df)
 
     if "label" not in df.columns:
         raise gr.Error("CSV must contain a column named 'label'")

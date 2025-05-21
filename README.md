@@ -51,8 +51,8 @@ This simplified workflow should help you get started even if you are new to Pyth
 
 You can launch the included `app.py` script on Hugging Face Spaces or locally. It provides a small Gradio interface with three tabs:
 
-1. **Preprocessing** – upload an Excel **or** CSV file and download the converted CSV.
-2. **Training** – upload a CSV (with a `label` column) to train a simple model. The accuracy and a downloadable model file are returned.
+1. **Preprocessing** – upload an Excel **or** CSV file and download the converted CSV. All column names are normalised to lowercase.
+2. **Training** – upload a CSV (containing a column `label`) to train a simple model. The accuracy and a downloadable model file are returned.
 3. **Evaluation** – upload a trained model file together with a CSV to measure accuracy on that data.
 
 To run the app locally, install the dependencies and execute:
@@ -72,7 +72,7 @@ If you are new to Python, follow these steps to run each tool in order:
    ```bash
    pip install -r requirements.txt
    ```
-3. **Preprocess the data** – Convert the Excel files by executing:
+3. **Preprocess the data** – Convert the Excel files by executing (column names will be normalised to lowercase):
    ```bash
    python preprocessing.py --input-dir "SLDEA Data" --output-dir csv_output
    ```
