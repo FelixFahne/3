@@ -1,14 +1,16 @@
-"""Utility script for converting Excel annotation files to CSV.
+"""Utility script for converting Excel annotation files to *numeric* CSV.
 
-The original version of this script hard-coded absolute file paths.  It now
-accepts an input directory containing Excel files and an output directory for
-the converted CSV files.  Each Excel file found in the input directory will be
-converted to a CSV file with the same base name in the output directory.
+The original version hard-coded absolute paths.  
+Jetzt werden alle .xlsx/.xls aus einem Eingabeordner eingelesen und zwei
+Dateien erzeugt:
 
-Example usage::
+1. <name>.csv       – 1-zu-1-Dump des Excel (zur Referenz)
+2. <name>_num.csv   – numerische Variante mit One-Hot-Encoding für
+                      alle Objekt-/Kategorie-Spalten **außer `label`**
+
+Beispiel ::
 
     python preprocessing.py --input-dir "SLDEA Data" --output-dir csv_output
-
 """
 
 import argparse
@@ -36,12 +38,10 @@ def convert_excels_to_csv(input_dir: str, output_dir: str):
     for excel_filename in excel_files:
         excel_path = os.path.join(input_dir, excel_filename)
         print(f"Processing {excel_path}")
-        csv_filename = os.path.splitext(excel_filename)[0] + ".csv"
-        csv_path = os.path.join(output_dir, csv_filename)
 
-        # Explicitly specify openpyxl as the engine for .xlsx files. Some of the
-        # provided files may actually be legacy Excel formats. In that case,
-        # fall back to the xlrd engine which handles .xls files.
+        # ------------------------------------------------------------
+        # Schritt 1: Excel einlesen (openpyxl → xlrd Fallback)
+        # ------------------------------------------------------------
         try:
             df = pd.read_excel(excel_path, engine="openpyxl")
         except Exception as e:
@@ -51,10 +51,36 @@ def convert_excels_to_csv(input_dir: str, output_dir: str):
             except Exception as e2:
                 print(f"  skipped {excel_filename} due to read error: {e2}")
                 continue
-        df.to_csv(csv_path, index=False)
-        csv_files.append(csv_path)
 
-    print("All files have been converted to CSV format.")
+        # ------------------------------------------------------------
+        # Schritt 2: Raw-CSV speichern (optional, Referenz)
+        # ------------------------------------------------------------
+        csv_filename = os.path.splitext(excel_filename)[0] + ".csv"
+        csv_path = os.path.join(output_dir, csv_filename)
+        df.to_csv(csv_path, index=False)
+
+        # ------------------------------------------------------------
+        # Schritt 3: Objekt-/Kategorie-Spalten One-Hot-Encodieren
+        #            (label bleibt unverändert)
+        # ------------------------------------------------------------
+        label_col = "label" if "label" in df.columns else None
+        cat_cols = df.select_dtypes(include=["object", "category"]).columns
+        if label_col in cat_cols:
+            cat_cols = cat_cols.drop(label_col)
+
+        if len(cat_cols):
+            df_num = pd.get_dummies(df, columns=cat_cols, drop_first=True)
+        else:
+            df_num = df.copy()
+
+        num_filename = os.path.splitext(excel_filename)[0] + "_num.csv"
+        num_path = os.path.join(output_dir, num_filename)
+        df_num.to_csv(num_path, index=False)
+
+        print(f"  ✓ wrote {num_path}")
+        csv_files.append(num_path)
+
+    print("All files have been converted to *_num.csv format.")
     return csv_files
 
 
@@ -85,87 +111,80 @@ def main():
     if args.convert_only:
         return
 
-    # Load one of the generated CSVs if available so subsequent analysis does not
-    # fail. Replace or extend this step with your own data loading logic.
+    # Load one of the generated numeric CSVs for follow-up analysis
     if csv_files:
         df = pd.read_csv(csv_files[0])
     else:
         df = pd.DataFrame()
 
-# Placeholder DataFrame. Replace this with your own summarised data structure
-# that aggregates label counts for each dialogue segment.
+    # ----------------------------------------------------------------
+    # ----- Beispiel-Analyse (bestehender Code bleibt unverändert) ----
+    # ----------------------------------------------------------------
     summary_label_counts_by_segment = pd.DataFrame()
 
-
     def assign_tone(row):
-        if row['backchannels'] > 0 or row['code-switching for communicative purposes'] > 0 or row['collaborative finishes'] > 0:
-            return 'Informal'
-        elif row['subordinate clauses'] > 0 or row['impersonal subject + non-factive verb + NP'] > 0:
-            return 'Formal'
+        if (
+            row["backchannels"] > 0
+            or row["code-switching for communicative purposes"] > 0
+            or row["collaborative finishes"] > 0
+        ):
+            return "Informal"
+        elif (
+            row["subordinate clauses"] > 0
+            or row["impersonal subject + non-factive verb + NP"] > 0
+        ):
+            return "Formal"
         else:
-            return 'Neutral'  # Default to Neutral if none of the criteria match
+            return "Neutral"
 
-# Apply the function to each segment
-    summary_label_counts_by_segment['Tone'] = summary_label_counts_by_segment.apply(assign_tone, axis=1)
+    summary_label_counts_by_segment["Tone"] = summary_label_counts_by_segment.apply(
+        assign_tone, axis=1
+    )
 
-# Overview of tone assignments
-    tone_assignments = summary_label_counts_by_segment['Tone'].value_counts()
+    tone_assignments = summary_label_counts_by_segment["Tone"].value_counts()
 
-# Visualize the distribution of assigned tones across segments
     plt.figure(figsize=(8, 5))
-    tone_assignments.plot(kind='bar')
-    plt.title('Distribution of Assigned Tones Across Dialogue Segments')
-    plt.xlabel('Tone')
-    plt.ylabel('Number of Segments')
+    tone_assignments.plot(kind="bar")
+    plt.title("Distribution of Assigned Tones Across Dialogue Segments")
+    plt.xlabel("Tone")
+    plt.ylabel("Number of Segments")
     plt.xticks(rotation=0)
     plt.show()
 
-# Now that we have assigned tones, we could explore the relationship between these tones and specific labels
-# This step is illustrative and based on the simplified criteria for tone assignment
-    tone_assignments
+    # ----------------------------------------------------------------
+    # Example feature engineering + regression (unchanged)
+    # ----------------------------------------------------------------
+    features = df.groupby("dialogue_id").agg(
+        {
+            "token_label_type1": "sum",
+            "token_label_type2": "sum",
+            # Add more as needed
+        }
+    )
 
+    dialogue_labels = df.groupby("dialogue_id").agg(
+        {
+            "OverallToneChoice": "first",
+            "TopicExtension": "first",
+        }
+    )
 
-# Assuming `df` is a DataFrame with dialogue identifiers and the constructed dialogue-level labels
-
-# Feature Engineering: Summarize token-level labels into dialogue-level features
-    features = df.groupby('dialogue_id').agg({
-    'token_label_type1': 'sum',
-    'token_label_type2': 'sum',
-    # Add more as needed
-})
-
-# Assume `dialogue_labels` is a DataFrame with our dialogue-level labels
-    dialogue_labels = df.groupby('dialogue_id').agg({
-    'OverallToneChoice': 'first',  # Assuming a method to assign these labels
-    'TopicExtension': 'first'
-})
-
-# Join features with labels
     data_for_regression = features.join(dialogue_labels)
 
-# Split data into features (X) and labels (y)
-    X = data_for_regression.drop(['OverallToneChoice', 'TopicExtension'], axis=1)
-    y = data_for_regression[['OverallToneChoice', 'TopicExtension']]
+    X = data_for_regression.drop(["OverallToneChoice", "TopicExtension"], axis=1)
+    y = data_for_regression[["OverallToneChoice", "TopicExtension"]]
 
-# Regression analysis (simplified)
     from sklearn.model_selection import train_test_split
     from sklearn.linear_model import LinearRegression
 
-# Splitting dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
 
-# Linear regression model for 'Overall Tone Choice'
-    model_tone = LinearRegression().fit(X_train, y_train['OverallToneChoice'])
-
-# Predict and evaluate 'Overall Tone Choice'
-# (Evaluation steps would go here)
-
-# Repeat for 'Topic Extension'
-    model_topic = LinearRegression().fit(X_train, y_train['TopicExtension'])
-
-    # Predict and evaluate 'Topic Extension'
+    model_tone = LinearRegression().fit(X_train, y_train["OverallToneChoice"])
+    model_topic = LinearRegression().fit(X_train, y_train["TopicExtension"])
+    # (Evaluation code would go here)
 
 
 if __name__ == "__main__":
     main()
-
