@@ -18,23 +18,40 @@ def canonicalize_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ──────────────────────────────────────────────────────────────
-# Tab 1 · Preprocessing (reines Umwandeln Excel → CSV)
+# Tab 1 · Preprocessing  (Excel/CSV  →  numerische CSV)
 # ──────────────────────────────────────────────────────────────
 def preprocess_excel(file):
-    """Convert an uploaded Excel or CSV file to CSV and return the temp path."""
+    """
+    Upload Excel/CSV → gibt eine numerische CSV zurück.
+
+    Kategoriale Spalten werden automatisch One-Hot-kodiert,
+    die 'label'-Spalte bleibt unverändert.
+    """
     if file is None:
         raise gr.Error("Please upload an Excel or CSV file")
 
+    # 1) Laden --------------------------------------------------
     filename = file.name.lower()
     try:
-        if filename.endswith(".csv"):
-            df = pd.read_csv(file.name)
-        else:
-            df = pd.read_excel(file.name, engine="openpyxl")
+        df = pd.read_csv(file.name) if filename.endswith(".csv") else pd.read_excel(
+            file.name, engine="openpyxl"
+        )
     except Exception as e:
         raise gr.Error(f"Failed to read file: {e}")
 
     canonicalize_columns(df)
+
+    # 2) One-Hot-Encoding (label ausnehmen) ---------------------
+    label_col = "label" if "label" in df.columns else None
+    cat_cols = (
+        df.select_dtypes(include=["object", "category"])
+        .columns.difference([label_col])
+    )
+    if len(cat_cols):
+        df = pd.get_dummies(df, columns=cat_cols, drop_first=True)
+    # -----------------------------------------------------------
+
+    # 3) Temp-CSV zurückgeben
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".csv")
     df.to_csv(tmp.name, index=False)
     return tmp.name
@@ -44,7 +61,7 @@ def preprocess_excel(file):
 # Tab 2 · Training
 # ──────────────────────────────────────────────────────────────
 def train_model(csv_file):
-    """Train a RandomForest on the provided *_num.csv file."""
+    """Train a RandomForest on the provided (numerischen) CSV."""
     if csv_file is None:
         raise gr.Error("Please upload a CSV or Excel file")
 
@@ -62,12 +79,11 @@ def train_model(csv_file):
         raise gr.Error("CSV must contain a column named 'label'")
 
     X = df.drop(columns=["label"])
-    # Ensure all feature columns are numeric
     bad = X.select_dtypes(include=["object", "category"]).columns
     if len(bad):
         raise gr.Error(
             f"Spalten nicht numerisch: {list(bad)}. "
-            "Bitte die *_num.csv* benutzen, die aus dem Preprocessing stammt."
+            "Bitte die Datei aus dem Preprocessing-Tab benutzen."
         )
 
     y = df["label"]
@@ -90,7 +106,7 @@ def train_model(csv_file):
 # Tab 3 · Evaluation
 # ──────────────────────────────────────────────────────────────
 def evaluate_model(model_file, csv_file):
-    """Evaluate a trained model on a numeric CSV file."""
+    """Evaluate a trained model on a numerische CSV Datei."""
     if model_file is None or csv_file is None:
         raise gr.Error("Please provide both a model file and a CSV file")
 
@@ -114,7 +130,7 @@ def evaluate_model(model_file, csv_file):
     if len(bad):
         raise gr.Error(
             f"Spalten nicht numerisch: {list(bad)}. "
-            "Bitte die *_num.csv* benutzen, die aus dem Preprocessing stammt."
+            "Bitte die Datei aus dem Preprocessing-Tab benutzen."
         )
 
     y = df["label"]
@@ -134,13 +150,15 @@ with demo:
     # Tab 1 · Preprocessing
     with gr.Tab("Preprocessing"):
         input_excel = gr.File(label="Excel or CSV file")
-        convert_btn = gr.Button("Convert to CSV")
-        output_csv = gr.File(label="CSV output")
+        convert_btn = gr.Button("Convert to numeric CSV")
+        output_csv = gr.File(label="Numeric CSV output")
         convert_btn.click(preprocess_excel, inputs=input_excel, outputs=output_csv)
 
     # Tab 2 · Training
     with gr.Tab("Training"):
-        train_csv = gr.File(label="Training CSV (must include 'label' column)")
+        train_csv = gr.File(
+            label="Training CSV (must include 'label' column; use output from Tab 1)"
+        )
         train_btn = gr.Button("Train model")
         train_accuracy = gr.Number(label="Accuracy")
         model_output = gr.File(label="Model file (.pkl)")
@@ -153,7 +171,9 @@ with demo:
     # Tab 3 · Evaluation
     with gr.Tab("Evaluation"):
         model_file = gr.File(label="Model file (.pkl)")
-        eval_csv = gr.File(label="Evaluation CSV (must include 'label' column)")
+        eval_csv = gr.File(
+            label="Evaluation CSV (must include 'label' column; use output from Tab 1)"
+        )
         eval_btn = gr.Button("Evaluate")
         eval_accuracy = gr.Number(label="Accuracy")
         eval_btn.click(
