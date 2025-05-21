@@ -27,10 +27,16 @@ def preprocess_excel(file):
 
 
 def train_model(csv_file):
-    """Train a simple model on the provided CSV."""
+    """Train a simple model on the provided CSV or Excel file."""
     if csv_file is None:
-        raise gr.Error("Please upload a CSV file")
-    df = pd.read_csv(csv_file.name)
+        raise gr.Error("Please upload a CSV or Excel file")
+
+    filename = csv_file.name.lower()
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        df = pd.read_excel(csv_file.name, engine="openpyxl")
+    else:
+        df = pd.read_csv(csv_file.name, encoding="utf-8-sig")
+
     if "label" not in df.columns:
         raise gr.Error("CSV must contain a column named 'label'")
     X = df.drop(columns=["label"])
@@ -52,7 +58,12 @@ def evaluate_model(model_file, csv_file):
     if model_file is None or csv_file is None:
         raise gr.Error("Please provide both a model file and a CSV file")
     clf = joblib.load(model_file.name)
-    df = pd.read_csv(csv_file.name)
+    filename = csv_file.name.lower()
+    if filename.endswith(".xlsx") or filename.endswith(".xls"):
+        df = pd.read_excel(csv_file.name, engine="openpyxl")
+    else:
+        df = pd.read_csv(csv_file.name, encoding="utf-8-sig")
+
     if "label" not in df.columns:
         raise gr.Error("CSV must contain a column named 'label'")
     X = df.drop(columns=["label"])
