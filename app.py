@@ -66,8 +66,6 @@ demo = gr.Blocks(theme=Base())
 
 with demo:
     gr.Markdown("# SLEDA Tools")
-    with gr.Tab("Annotation"):
-        gr.HTML(annotation_html)
 
     with gr.Tab("Preprocessing"):
         input_excel = gr.File(label="Excel or CSV file")
