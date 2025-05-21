@@ -7,18 +7,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
-# Load the annotation tool HTML and inline the JavaScript so it works inside Gradio
-with open("Annotation_tool.html", "r", encoding="utf-8") as f:
-    annotation_html = f.read()
-
-with open("script.js", "r", encoding="utf-8") as f:
-    script_js = f.read()
-
-annotation_html = annotation_html.replace(
-    '<script src="script.js"></script>', f"<script>{script_js}</script>"
-)
-
-
 def preprocess_excel(file):
     """Convert an uploaded Excel or CSV file to CSV and return the path."""
     if file is None:
