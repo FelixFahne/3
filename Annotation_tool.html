@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Annotation</title>
+<style>
+ body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #ffffff;
+    color: #000000;
+    line-height: 1.6;
+    margin: 0;
+    padding-top: 50px;
+    padding-left: 40px;
+    padding-right: 40px;
+ }
+
+h1 {
+    font-size: 30px; 
+    color: #0056b3;
+    margin-top: 0;
+    margin-bottom: 30px;
+    font-weight: 700;
+    text-align: left;
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: 20px;
+    color: #0056b3;
+    margin-top: 30px;
+    margin-bottom: 15px;
+    font-weight: 700;
+    text-align: left;
+    padding-left: 10px;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    background-color: #0056b3;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover,
+button:focus {
+    background-color: #003d82;
+}
+
+input[type="text"],
+input[type="file"] {
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    width: 100%; 
+    max-width: 200px; 
+    box-sizing: border-box; 
+}
+
+#labels-container {
+    position: fixed;  
+    top: 0;          
+    left: 0;          
+    width: 100%;
+    background: white;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 20px;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.label-btn {
+    background-color: #e7e7e7;
+    color: #333;
+    margin-right: 10px;
+}
+
+.delete-label-btn {
+    padding: 5px 8px;
+    background-color: #0056b3;
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.label-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: white;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+    table-layout: auto;
+}
+
+th:first-child, td:first-child,
+th:nth-child(1), td:nth-child(1) {
+    width: 5%;
+}
+
+th, td {
+    padding: 15px;
+    border-bottom: 1px solid #ddd;
+    vertical-align: top;
+    word-wrap: break-word;
+    white-space: normal;
+    color: #000000;
+}
+
+@media screen and (max-width: 768px) {
+    .table, th, td {
+        width: auto;
+        padding: 10px;
+        word-wrap: break-word;
+        white-space: normal;
+    }
+}
+
+th {
+    background-color: #0056b3;
+    color: white;
+}
+
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+#confirm-button, #download-button {
+    display: block;
+    margin: 20px 0;
+}
+</style>
+</head>
+<body>
+    <h1>Annotation Tool</h1>
+    <p>Please upload dialogue file.</p>
+    <input type="file" id="file-input" accept=".xlsx, .xls, .csv, .json" />
+    <button id="confirm-button">Show content</button>
+
+    <input type="text" id="custom-label-name" placeholder="Enter custom label name" />
+
+    <div id="labels-container"></div>
+
+    <div id="label-buttons">
+        <button id="add-custom-label">Add Label</button>
+        <button id="toggle-labels-btn">Show Labels</button>
+        <button id="clear-highlights" style="background-color:#0056b3;">Clear all annotation</button>
+        <button id="delete-highlight" style="background-color:#0056b3;">Cancel annotation</button>
+    </div>
+
+    <div id="dialogue-content">
+        <!-- Dialogue content will be displayed here -->
+    </div>
+    <button id="download-button" style="display:none;">Download</button>
+
+    <script src="libs/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
