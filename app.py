@@ -30,7 +30,10 @@ def train_model(csv_file):
     """Train a simple model on the provided CSV."""
     if csv_file is None:
         raise gr.Error("Please upload a CSV file")
-    df = pd.read_csv(csv_file.name)
+    try:
+        df = pd.read_csv(csv_file.name)
+    except Exception as e:
+        raise gr.Error(f"Failed to read file: {e}")
     if "label" not in df.columns:
         raise gr.Error("CSV must contain a column named 'label'")
     X = df.drop(columns=["label"])
@@ -52,7 +55,10 @@ def evaluate_model(model_file, csv_file):
     if model_file is None or csv_file is None:
         raise gr.Error("Please provide both a model file and a CSV file")
     clf = joblib.load(model_file.name)
-    df = pd.read_csv(csv_file.name)
+    try:
+        df = pd.read_csv(csv_file.name)
+    except Exception as e:
+        raise gr.Error(f"Failed to read file: {e}")
     if "label" not in df.columns:
         raise gr.Error("CSV must contain a column named 'label'")
     X = df.drop(columns=["label"])

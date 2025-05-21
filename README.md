@@ -40,7 +40,7 @@ pip install -r requirements.txt
    `--convert-only` if you want to skip the analysis section of the script.
 
 2. **Train a model**
-   Use `dialogue_pred.ipynb` (or `ESL_AddedExperinments.ipynb`) in Jupyter Notebook. Load the CSV files created in step 1 and follow the cells to train a simple model.
+   Use `dialogue_pred.ipynb` (or `ESL_AddedExperinments.ipynb`) in Jupyter Notebook. Load the CSV files created in step 1 and follow the cells to train a simple model. The training CSV must include a column named `label`.
 
 3. **Evaluate**
    After training, you can run evaluation steps in the notebook or compare results with the CSVs inside `2024ACLESLMainCodes_Results`.
@@ -78,5 +78,5 @@ If you are new to Python, follow these steps to run each tool in order:
    ```
    The converted CSV files will appear inside the `csv_output` folder. Use
    the optional `--convert-only` flag to run just the conversion step.
-4. **Train a model** – Open either `dialogue_pred.ipynb` or `ESL_AddedExperinments.ipynb` in Jupyter Notebook and run the cells one by one. A model file will be generated.
+4. **Train a model** – Open either `dialogue_pred.ipynb` or `ESL_AddedExperinments.ipynb` in Jupyter Notebook and run the cells one by one. Use a CSV file that includes a `label` column. A model file will be generated.
 5. **Evaluate a corpus** – Use the evaluation tab in `app.py` or the final notebook cells to load the saved model together with new CSV data. Accuracy numbers will be printed.
